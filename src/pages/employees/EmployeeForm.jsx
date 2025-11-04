@@ -6,8 +6,6 @@ import { X, Loader2, Save, User } from 'lucide-react'
 import { useCreateEmployeeMutation, useUpdateEmployeeMutation } from '../../services/employeeApi'
 
 export default function EmployeeForm({ employee, onClose, departments }) {
-  console.log('EmployeeForm - Departments received:', departments)
-  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -26,8 +24,18 @@ export default function EmployeeForm({ employee, onClose, departments }) {
         relationship: '',
         phone: ''
       }
+    },
+    bankDetails: {
+      accountNumber: '',
+      bankName: '',
+      ifscCode: '',
+      accountHolderName: '',
+      upiId: '',
+      payoutMethod: 'bank_account'
     }
   })
+  const [deptMode, setDeptMode] = useState(() => ('select'))
+  const [deptForm, setDeptForm] = useState({ name: '', description: '', budget: '' })
 
   const [createEmployee, { isLoading: createLoading }] = useCreateEmployeeMutation()
   const [updateEmployee, { isLoading: updateLoading }] = useUpdateEmployeeMutation()
@@ -49,12 +57,20 @@ export default function EmployeeForm({ employee, onClose, departments }) {
         employmentType: employee.employmentType || 'permanent',
         workLocation: employee.workLocation || 'office',
         personalDetails: {
-          dateOfBirth: employee.user?.personalDetails?.dateOfBirth ? new Date(employee.user.personalDetails.dateOfBirth).toISOString().split('T')[0] : '',
+          dateOfBirth: employee.personalDetails?.dateOfBirth ? new Date(employee.personalDetails.dateOfBirth).toISOString().split('T')[0] : '',
           emergencyContact: {
-            name: employee.user?.personalDetails?.emergencyContact?.name || '',
-            relationship: employee.user?.personalDetails?.emergencyContact?.relationship || '',
-            phone: employee.user?.personalDetails?.emergencyContact?.phone || ''
+            name: employee.personalDetails?.emergencyContact?.name || '',
+            relationship: employee.personalDetails?.emergencyContact?.relationship || '',
+            phone: employee.personalDetails?.emergencyContact?.phone || ''
           }
+        },
+        bankDetails: {
+          accountNumber: employee.bankDetails?.accountNumber || '',
+          bankName: employee.bankDetails?.bankName || '',
+          ifscCode: employee.bankDetails?.ifscCode || '',
+          accountHolderName: employee.bankDetails?.accountHolderName || '',
+          upiId: employee.bankDetails?.upiId || '',
+          payoutMethod: employee.bankDetails?.payoutMethod || 'bank_account'
         }
       })
     }
@@ -84,6 +100,15 @@ export default function EmployeeForm({ employee, onClose, departments }) {
           [field]: value
         }
       }))
+    } else if (name.startsWith('bankDetails.')) {
+      const field = name.split('.')[1]
+      setFormData(prev => ({
+        ...prev,
+        bankDetails: {
+          ...prev.bankDetails,
+          [field]: value
+        }
+      }))
     } else {
       setFormData(prev => ({
         ...prev,
@@ -100,6 +125,20 @@ export default function EmployeeForm({ employee, onClose, departments }) {
       const transformedData = {
         ...formData,
         salary: formData.salary ? { basic: parseFloat(formData.salary) } : undefined
+      }
+
+      // Department payload: if creating, send object inline
+      if (deptMode === 'create') {
+        const name = deptForm.name?.trim()
+        if (!name) {
+          alert('Department name is required')
+          return
+        }
+        transformedData.department = {
+          name,
+          description: deptForm.description?.trim() || undefined,
+          budget: deptForm.budget ? Number(deptForm.budget) : undefined
+        }
       }
 
       if (isEdit) {
@@ -207,20 +246,63 @@ export default function EmployeeForm({ employee, onClose, departments }) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-2">Department *</label>
-                    <select
-                      name="department"
-                      value={formData.department}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-3 py-2 border border-border rounded-md bg-background"
-                    >
-                      <option value="">Select Department</option>
-                      {departments?.map((dept) => (
-                        <option key={dept._id} value={dept._id}>
-                          {dept.name}
-                        </option>
-                      ))}
-                    </select>
+                    {deptMode === 'select' ? (
+                      <div className="space-y-2">
+                        <select
+                          name="department"
+                          value={formData.department}
+                          onChange={(e) => {
+                            if (e.target.value === '__create__') {
+                              setDeptMode('create')
+                              setFormData(prev => ({ ...prev, department: '' }))
+                            } else {
+                              handleChange(e)
+                            }
+                          }}
+                          required
+                          className="w-full px-3 py-2 border border-border rounded-md bg-background"
+                        >
+                          <option value="">Select Department</option>
+                          {departments?.map((dept) => (
+                            <option key={dept._id} value={dept._id}>
+                              {dept.name}
+                            </option>
+                          ))}
+                          <option value="__create__">+ Create new department…</option>
+                        </select>
+                        {!departments?.length && (
+                          <p className="text-xs text-muted-foreground">No departments yet. Create one.</p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-2 p-3 border rounded-md">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm mb-1">Name</label>
+                            <Input value={deptForm.name} onChange={(e) => setDeptForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Engineering" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm mb-1">Description</label>
+                          <textarea
+                            className="w-full min-h-[70px] rounded-md border border-input bg-background px-3 py-2 text-sm"
+                            value={deptForm.description}
+                            onChange={(e) => setDeptForm(f => ({ ...f, description: e.target.value }))}
+                            placeholder="What does this department do?"
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm mb-1">Budget (₹)</label>
+                            <Input type="number" min="0" value={deptForm.budget} onChange={(e) => setDeptForm(f => ({ ...f, budget: e.target.value }))} placeholder="e.g. 1000000" />
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Department will be created and linked.</span>
+                          <Button type="button" variant="outline" onClick={() => setDeptMode('select')}>Select existing</Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Designation *</label>
@@ -233,13 +315,14 @@ export default function EmployeeForm({ employee, onClose, departments }) {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Basic Salary</label>
+                    <label className="block text-sm font-medium mb-2">Basic Salary *</label>
                     <Input
                       name="salary"
                       type="number"
                       value={formData.salary}
                       onChange={handleChange}
                       placeholder="Enter basic salary"
+                      required
                     />
                   </div>
                   <div>
@@ -300,6 +383,83 @@ export default function EmployeeForm({ employee, onClose, departments }) {
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Bank Details for Payroll */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Banking Information (For Payroll)</h3>
+                
+                {/* Payout Method Selection */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Preferred Payout Method</label>
+                  <select
+                    name="bankDetails.payoutMethod"
+                    value={formData.bankDetails.payoutMethod}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-border rounded-md bg-background"
+                  >
+                    <option value="bank_account">Bank Account</option>
+                    <option value="upi">UPI</option>
+                  </select>
+                </div>
+
+                {/* Bank Account Details */}
+                {formData.bankDetails.payoutMethod === 'bank_account' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Account Holder Name</label>
+                      <Input
+                        name="bankDetails.accountHolderName"
+                        value={formData.bankDetails.accountHolderName}
+                        onChange={handleChange}
+                        placeholder="Enter account holder name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Bank Name</label>
+                      <Input
+                        name="bankDetails.bankName"
+                        value={formData.bankDetails.bankName}
+                        onChange={handleChange}
+                        placeholder="Enter bank name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Account Number</label>
+                      <Input
+                        name="bankDetails.accountNumber"
+                        value={formData.bankDetails.accountNumber}
+                        onChange={handleChange}
+                        placeholder="Enter account number"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">IFSC Code</label>
+                      <Input
+                        name="bankDetails.ifscCode"
+                        value={formData.bankDetails.ifscCode}
+                        onChange={handleChange}
+                        placeholder="Enter IFSC code"
+                        style={{ textTransform: 'uppercase' }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* UPI Details */}
+                {formData.bankDetails.payoutMethod === 'upi' && (
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">UPI ID</label>
+                      <Input
+                        name="bankDetails.upiId"
+                        value={formData.bankDetails.upiId}
+                        onChange={handleChange}
+                        placeholder="Enter UPI ID (e.g., user@paytm)"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Form Actions */}

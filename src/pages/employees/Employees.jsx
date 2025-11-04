@@ -56,9 +56,17 @@ export default function Employees() {
 
   const [deleteEmployee, { isLoading: deleteLoading }] = useDeleteEmployeeMutation()
 
-  const employees = employeesData?.employees || []
-  const pagination = employeesData?.pagination || {}
-  const departments = departmentsData?.departments || []
+  const employees = employeesData?.data || []
+  const pagination = useMemo(() => {
+    const p = employeesData?.pagination || {}
+    return {
+      currentPage: p.current,
+      totalPages: p.pages,
+      totalEmployees: p.total,
+      itemsPerPage: p.limit,
+    }
+  }, [employeesData])
+  const departments = departmentsData?.data || departmentsData?.departments || []
 
   // Update URL params
   const updateSearchParams = (params) => {
@@ -315,10 +323,10 @@ export default function Employees() {
                             </div>
                             <div>
                               <h3 className="font-semibold text-foreground">
-                                {employee.firstName} {employee.lastName}
+                                {employee.user?.name || 'Unnamed'}
                               </h3>
                               <p className="text-sm text-muted-foreground">
-                                {employee.employeeId}
+                                {employee.employeeCode}
                               </p>
                             </div>
                           </div>
@@ -355,12 +363,12 @@ export default function Employees() {
                           </div>
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Mail className="h-4 w-4" />
-                            <span className="truncate">{employee.email}</span>
+                            <span className="truncate">{employee.user?.email || '—'}</span>
                           </div>
-                          {employee.phoneNumber && (
+                          {(employee.user?.phone) && (
                             <div className="flex items-center gap-2 text-muted-foreground">
                               <Phone className="h-4 w-4" />
-                              <span>{employee.phoneNumber}</span>
+                              <span>{employee.user?.phone}</span>
                             </div>
                           )}
                           <div className="flex items-center gap-2">

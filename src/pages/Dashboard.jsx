@@ -70,30 +70,30 @@ export default function Dashboard() {
   const statsCards = [
     {
       title: 'Total Employees',
-      value: dashboardStats?.totalEmployees || 0,
+      value: dashboardStats?.data.totalEmployees || 0,
       icon: Users,
       description: dashboardStats?.employeeGrowth ? `${dashboardStats.employeeGrowth > 0 ? '+' : ''}${dashboardStats.employeeGrowth}% from last month` : 'No data',
       color: 'text-blue-600'
     },
     {
       title: 'Present Today',
-      value: dashboardStats?.presentToday || 0,
+      value: dashboardStats?.data.presentToday || 0,
       icon: UserCheck,
-      description: dashboardStats?.attendanceRate ? `${dashboardStats.attendanceRate}% attendance rate` : 'No data',
+      description: dashboardStats?.data.attendanceRate ? `${dashboardStats.data.attendanceRate}% attendance rate` : 'No data',
       color: 'text-green-600'
     },
     {
       title: 'On Leave',
-      value: dashboardStats?.onLeave || 0,
+      value: dashboardStats?.data.onLeave || 0,
       icon: CalendarCheck,
-      description: dashboardStats?.leaveBreakdown ? `${dashboardStats.leaveBreakdown.sick || 0} sick, ${dashboardStats.leaveBreakdown.vacation || 0} vacation` : 'No data',
+      description: dashboardStats?.data.leaveBreakdown ? `${dashboardStats.data.leaveBreakdown.sick || 0} sick, ${dashboardStats.data.leaveBreakdown.vacation || 0} vacation` : 'No data',
       color: 'text-yellow-600'
     },
     {
       title: 'Absent',
-      value: dashboardStats?.absent || 0,
+      value: dashboardStats?.data.absent || 0,
       icon: UserX,
-      description: dashboardStats?.absenceRate ? `${dashboardStats.absenceRate}% absence rate` : 'No data',
+      description: dashboardStats?.data.absenceRate ? `${dashboardStats.data.absenceRate}% absence rate` : 'No data',
       color: 'text-red-600'
     }
   ]

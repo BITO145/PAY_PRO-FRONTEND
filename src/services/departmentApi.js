@@ -3,9 +3,9 @@ import { apiSlice } from './api'
 export const departmentApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getDepartments: builder.query({
-      query: ({ page = 1, limit = 10, search = '' } = {}) => ({
+      query: ({ page = 1, limit = 10, search = '', status = 'all', sortBy = 'name', sortOrder = 'asc' } = {}) => ({
         url: '/departments',
-        params: { page, limit, search },
+        params: { page, limit, search, status, sortBy, sortOrder },
       }),
       providesTags: ['Department'],
     }),
