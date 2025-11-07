@@ -20,6 +20,14 @@ const ProtectedRoute = ({ children }) => {
   return isAuthenticated ? children : <Navigate to="/login" replace />
 }
 
+// Role-based Route Component
+const RoleRoute = ({ children, allowed = [] }) => {
+  const { user } = useSelector((state) => state.auth)
+  const role = (user?.role || 'employee').toLowerCase()
+  if (allowed.length === 0 || allowed.includes(role)) return children
+  return <Navigate to="/dashboard" replace />
+}
+
 // Public Route Component (redirect to dashboard if authenticated)
 const PublicRoute = ({ children }) => {
   const { isAuthenticated } = useSelector((state) => state.auth)
@@ -58,11 +66,46 @@ function App() {
       >
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
-        <Route path="employees" element={<Employees />} />
-        <Route path="attendance" element={<Attendance />} />
-        <Route path="leaves" element={<Leaves />} />
-        <Route path="payroll" element={<Payroll />} />
-        <Route path="departments" element={<Departments />} />
+        <Route
+          path="employees"
+          element={
+            <RoleRoute allowed={[ 'admin', 'hr' ]}>
+              <Employees />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="attendance"
+          element={
+            <RoleRoute allowed={[ 'employee' ]}>
+              <Attendance />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="leaves"
+          element={
+            <RoleRoute allowed={[ 'admin', 'hr', 'employee' ]}>
+              <Leaves />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="payroll"
+          element={
+            <RoleRoute allowed={[ 'admin', 'hr' ]}>
+              <Payroll />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="departments"
+          element={
+            <RoleRoute allowed={[ 'admin', 'hr' ]}>
+              <Departments />
+            </RoleRoute>
+          }
+        />
         <Route path="announcements" element={<Announcements />} />
         <Route path="holidays" element={<Holidays />} />
         <Route path="profile" element={<Profile />} />

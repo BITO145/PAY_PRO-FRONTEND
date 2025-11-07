@@ -22,42 +22,50 @@ const sidebarItems = [
   {
     title: 'Dashboard',
     path: '/dashboard',
-    icon: LayoutDashboard
+    icon: LayoutDashboard,
+    allowedRoles: ['admin', 'hr', 'employee']
   },
   {
     title: 'Employees',
     path: '/employees',
-    icon: Users
+    icon: Users,
+    allowedRoles: ['admin', 'hr']
   },
   {
     title: 'Attendance',
     path: '/attendance',
-    icon: Clock
+    icon: Clock,
+    allowedRoles: ['employee']
   },
   {
     title: 'Leaves',
     path: '/leaves',
-    icon: Calendar
+    icon: Calendar,
+    allowedRoles: ['admin', 'hr', 'employee']
   },
   {
     title: 'Payroll',
     path: '/payroll',
-    icon: DollarSign
+    icon: DollarSign,
+    allowedRoles: ['admin', 'hr']
   },
   {
     title: 'Departments',
     path: '/departments',
-    icon: Building2
+    icon: Building2,
+    allowedRoles: ['admin', 'hr']
   },
   {
     title: 'Announcements',
     path: '/announcements',
-    icon: Megaphone
+    icon: Megaphone,
+    allowedRoles: ['admin', 'hr', 'employee']
   },
   {
     title: 'Holidays',
     path: '/holidays',
-    icon: CalendarDays
+    icon: CalendarDays,
+    allowedRoles: ['admin', 'hr', 'employee']
   }
 ]
 
@@ -67,6 +75,7 @@ export default function Layout() {
   const dispatch = useDispatch()
   const { user } = useSelector((state) => state.auth)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const userRole = (user?.role || 'employee').toLowerCase()
 
   const handleLogout = () => {
     dispatch(logout())
@@ -103,7 +112,9 @@ export default function Layout() {
 
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-1 bg-card">
-            {sidebarItems.map((item) => {
+            {sidebarItems
+              .filter((item) => !item.allowedRoles || item.allowedRoles.includes(userRole))
+              .map((item) => {
               const Icon = item.icon
               const isActive = location.pathname === item.path
               
